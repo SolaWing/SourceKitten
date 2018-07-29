@@ -29,6 +29,7 @@ DispatchQueue.global(qos: .default).async {
     registry.register(StructureCommand())
     registry.register(RequestCommand())
     registry.register(VersionCommand())
+    registry.register(DaemonCommand())
     registry.register(HelpCommand(registry: registry))
 
     registry.main(defaultVerb: "help") { error in
