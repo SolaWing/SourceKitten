@@ -31,7 +31,7 @@ class DaemonTest(unittest.TestCase):
         r = {"id": requestID, "method": method}
         if param: r["params"] = param
         d = json.dumps(r).encode()
-        print(f"request {d}")
+        # print(f"request {d}")
         process.stdin.write(b'Content-Length:%d\r\n\r\n'%(len(d)))
         process.stdin.write(d)
         process.stdin.flush()
@@ -41,7 +41,7 @@ class DaemonTest(unittest.TestCase):
         r = {"method": method}
         if param: r["params"] = param
         d = json.dumps(r).encode()
-        print(f"notification {d}")
+        # print(f"notification {d}")
         process.stdin.write(b'Content-Length:%d\r\n\r\n'%(len(d)))
         process.stdin.write(d)
 
@@ -60,6 +60,30 @@ class DaemonTest(unittest.TestCase):
         except (KeyError, ValueError) as e:
             raise e
 
+    def test_replaceText(self):
+        sourcekitten = subprocess.Popen([binary, "daemon"], stdin=PIPE, stdout=PIPE, stderr=sys.stderr)
+        # editor.open with compileargs
+        with open("/tmp/a.yml") as f:
+            a = f.read()
+
+        print(a)
+        response = self.request(sourcekitten, "yaml", a) # type: dict
+        print(response['result'])
+
+
+        # replaceText without compileargs
+        # 需要一定的编译时间。
+        with open("/tmp/b.yml") as f:
+            b = f.read()
+
+        import time
+        time.sleep(5)
+        print(b)
+        response = self.request(sourcekitten, "yaml", b) # type: dict
+        print(response.get("result") or response.get("error"))
+
+        self.notification(sourcekitten, "end")
+        sourcekitten.communicate()
 
 def main():
     unittest.main()
