@@ -25,34 +25,38 @@ struct DaemonCommand: CommandProtocol {
 
     func run(_ options: NoOptions<SourceKittenError>) -> Result<(), SourceKittenError> {
         var package: RequestPackage? {
-            do {
-                let p = try getPackage()
-                return p
-            } catch {
-                print(error, to: &stderr)
-            }
-            return nil
-        }
-        loop: while let p = package {
-            switch p.content["method"] as? String {
-            case "yaml":
-                print("yaml request", to: &stderr)
-                if let content = p.content["params"] as? String, let rid = p.content["id"] {
-                    let request = Request.yamlRequest(yaml: content)
-                    do {
-                        response(id: rid, result: toJSON(toNSDictionary(try request.send())), error: nil)
-                    } catch {
-                        response(id: rid, result: nil, error: error.localizedDescription)
-                    }
-                    continue
+            return autoreleasepool {
+                do {
+                    let p = try getPackage()
+                    return p
+                } catch {
+                    print(error, to: &stderr)
                 }
-                response(id: p.content["id"], result: nil, error: "Invalid yaml request")
-            case "end":
-                print("will end", to: &stderr)
-//                response(content: "[]", error: nil)
-                break loop
-            default:
-                continue // ignore other method
+                return nil
+            }
+        }
+        var finished = false
+        loop: while !finished, let p = package {
+            autoreleasepool {
+                switch p.content["method"] as? String {
+                case "yaml":
+                    print("yaml request", to: &stderr)
+                    if let content = p.content["params"] as? String, let rid = p.content["id"] {
+                        let request = Request.yamlRequest(yaml: content)
+                        do {
+                            response(id: rid, result: toNSDictionary(try request.send()), error: nil)
+                        } catch {
+                            response(id: rid, result: nil, error: error.localizedDescription)
+                        }
+                    } else {
+                        response(id: p.content["id"], result: nil, error: "Invalid yaml request")
+                    }
+                case "end":
+                    print("will end", to: &stderr)
+                    finished = true
+                default:
+                    return // ignore other method
+                }
             }
         }
         print("end", to: &stderr)
@@ -84,7 +88,7 @@ struct DaemonCommand: CommandProtocol {
         }
     }
 
-    private func response(id: Any?, result: String?, error: String?) {
+    private func response(id: Any?, result: Any?, error: String?) {
         var r = [String: Any]()
         if let id = id {
             r["id"] = id
