@@ -343,7 +343,7 @@ public final class File {
             var substructure = SwiftDocKey.getSubstructure(parent)!
             let docOffset = SwiftDocKey.getBestOffset(doc)!
 
-            let insertIndex = substructure.index(where: { structure in
+            let insertIndex = substructure.firstIndex(where: { structure in
                 SwiftDocKey.getBestOffset(structure)! > docOffset
             }) ?? substructure.endIndex
 
@@ -371,29 +371,17 @@ public final class File {
     }
 
     /**
-    Returns true if path is nil or if path has the same last path component as `key.filepath` in the
-    input dictionary.
-
-    - parameter dictionary: Dictionary to parse.
-    */
-    internal func shouldTreatAsSameFile(_ dictionary: [String: SourceKitRepresentable]) -> Bool {
-        return path == SwiftDocKey.getFilePath(dictionary)
-    }
-
-    /**
     Returns true if the input dictionary contains a parseable declaration.
 
     - parameter dictionary: Dictionary to parse.
     */
     private func shouldParseDeclaration(_ dictionary: [String: SourceKitRepresentable]) -> Bool {
         // swiftlint:disable operator_usage_whitespace
-        let sameFile                = shouldTreatAsSameFile(dictionary)
         let hasTypeName             = SwiftDocKey.getTypeName(dictionary) != nil
         let hasAnnotatedDeclaration = SwiftDocKey.getAnnotatedDeclaration(dictionary) != nil
         let hasOffset               = SwiftDocKey.getOffset(dictionary) != nil
-        let isntExtension           = SwiftDocKey.getKind(dictionary) != SwiftDeclarationKind.extension.rawValue
         // swiftlint:enable operator_usage_whitespace
-        return sameFile && hasTypeName && hasAnnotatedDeclaration && hasOffset && isntExtension
+        return hasTypeName && hasAnnotatedDeclaration && hasOffset
     }
 
     /**

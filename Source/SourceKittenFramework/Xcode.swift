@@ -19,7 +19,11 @@ internal enum XcodeBuild {
     - returns: `xcodebuild`'s STDERR+STDOUT output combined.
     */
     internal static func cleanBuild(arguments: [String], inPath path: String) -> String? {
-        let arguments = arguments + ["clean", "build", "CODE_SIGN_IDENTITY=", "CODE_SIGNING_REQUIRED=NO"]
+        let arguments = arguments + ["clean",
+                                     "build",
+                                     "CODE_SIGN_IDENTITY=",
+                                     "CODE_SIGNING_REQUIRED=NO",
+                                     "CODE_SIGNING_ALLOWED=NO"]
         fputs("Running xcodebuild\n", stderr)
         return run(arguments: arguments, inPath: path)
     }
@@ -33,28 +37,80 @@ internal enum XcodeBuild {
     - returns: `xcodebuild`'s STDERR+STDOUT output combined.
     */
     internal static func run(arguments: [String], inPath path: String) -> String? {
+        return String(data: launch(arguments: arguments, inPath: path, pipingStandardError: true), encoding: .utf8)
+    }
+
+    /**
+     Launch `xcodebuild` along with any passed in build arguments.
+
+     - parameter arguments:           Arguments to pass to `xcodebuild`.
+     - parameter path:                Path to run `xcodebuild` from.
+     - parameter pipingStandardError: Whether to pipe the standard error output. The default value is `true`.
+
+     - returns: `xcodebuild`'s STDOUT output and, optionally, both STDERR+STDOUT output combined.
+     */
+    internal static func launch(arguments: [String], inPath path: String, pipingStandardError: Bool = true) -> Data {
         let task = Process()
-        task.launchPath = "/usr/bin/xcodebuild"
-        task.currentDirectoryPath = path
+        let pathOfXcodebuild = "/usr/bin/xcodebuild"
         task.arguments = arguments
 
         let pipe = Pipe()
         task.standardOutput = pipe
-        task.standardError = pipe
 
-        task.launch()
+        if pipingStandardError {
+            task.standardError = pipe
+        }
+
+        do {
+        #if canImport(Darwin)
+            if #available(macOS 10.13, *) {
+                task.executableURL = URL(fileURLWithPath: pathOfXcodebuild)
+                task.currentDirectoryURL = URL(fileURLWithPath: path)
+                try task.run()
+            } else {
+                task.launchPath = pathOfXcodebuild
+                task.currentDirectoryPath = path
+                task.launch()
+            }
+        #elseif compiler(>=5)
+            task.executableURL = URL(fileURLWithPath: pathOfXcodebuild)
+            task.currentDirectoryURL = URL(fileURLWithPath: path)
+            try task.run()
+        #else
+            task.launchPath = pathOfXcodebuild
+            task.currentDirectoryPath = path
+            task.launch()
+        #endif
+        } catch {
+            return Data()
+        }
 
         let file = pipe.fileHandleForReading
         defer { file.closeFile() }
 
-        return String(data: file.readDataToEndOfFile(), encoding: .utf8)
+        return file.readDataToEndOfFile()
+    }
+
+    /**
+     Runs `xcodebuild -showBuildSettings` along with any passed in build arguments.
+
+     - parameter arguments: Arguments to pass to `xcodebuild`.
+     - parameter path:      Path to run `xcodebuild` from.
+
+     - returns: An array of `XcodeBuildSetting`s.
+     */
+    internal static func showBuildSettings(arguments xcodeBuildArguments: [String],
+                                           inPath: String) -> [XcodeBuildSetting]? {
+        let arguments = xcodeBuildArguments + ["-showBuildSettings", "-json"]
+        let outputData = XcodeBuild.launch(arguments: arguments, inPath: inPath, pipingStandardError: false)
+        return try? JSONDecoder().decode([XcodeBuildSetting].self, from: outputData)
     }
 }
 
 /**
 Parses likely module name from compiler or `xcodebuild` arguments.
 
-Will the following values, in this priority: module name, target name, scheme name.
+Will use the following values, in this priority: module name, target name, scheme name.
 
 - parameter arguments: Compiler or `xcodebuild` arguments to parse.
 
@@ -62,7 +118,7 @@ Will the following values, in this priority: module name, target name, scheme na
 */
 internal func moduleName(fromArguments arguments: [String]) -> String? {
     for flag in ["-module-name", "-target", "-scheme"] {
-        if let flagIndex = arguments.index(of: flag), flagIndex + 1 < arguments.count {
+        if let flagIndex = arguments.firstIndex(of: flag), flagIndex + 1 < arguments.count {
             return arguments[flagIndex + 1]
         }
     }
@@ -78,7 +134,7 @@ Partially filters compiler arguments from `xcodebuild` to something that SourceK
           more flags to remove in `.1`.
 */
 private func partiallyFilter(arguments args: [String]) -> ([String], Bool) {
-    guard let indexOfFlagToRemove = args.index(of: "-output-file-map") else {
+    guard let indexOfFlagToRemove = args.firstIndex(of: "-output-file-map") else {
         return (args, false)
     }
     var args = args
@@ -147,6 +203,7 @@ internal func parseCompilerArguments(xcodebuildOutput: String, language: Languag
     let escapedSpacePlaceholder = "\u{0}"
     let args = filter(arguments: String(xcodebuildOutput[matchRange])
         .replacingOccurrences(of: "\\ ", with: escapedSpacePlaceholder)
+        .unescaped
         .components(separatedBy: " "))
 
     // Remove first argument (swiftc/clang) and re-add spaces in arguments
@@ -177,38 +234,37 @@ public func sdkPath() -> String {
     return ""
 #else
     let task = Process()
-    task.launchPath = "/usr/bin/xcrun"
+    let pathOfXcrun = "/usr/bin/xcrun"
     task.arguments = ["--show-sdk-path", "--sdk", "macosx"]
 
     let pipe = Pipe()
     task.standardOutput = pipe
 
-    task.launch()
+    do {
+    #if canImport(Darwin)
+        if #available(macOS 10.13, *) {
+            task.executableURL = URL(fileURLWithPath: pathOfXcrun)
+            try task.run()
+        } else {
+            task.launchPath = pathOfXcrun
+            task.launch()
+        }
+    #elseif compiler(>=5)
+        task.executableURL = URL(fileURLWithPath: pathOfXcrun)
+        try task.run()
+    #else
+        task.launchPath = pathOfXcrun
+        task.launch()
+    #endif
+    } catch {
+        return ""
+    }
 
     let file = pipe.fileHandleForReading
     let sdkPath = String(data: file.readDataToEndOfFile(), encoding: .utf8)
     file.closeFile()
     return sdkPath?.replacingOccurrences(of: "\n", with: "") ?? ""
 #endif
-}
-
-let regexForProjectTempRoot = try! NSRegularExpression(pattern: "PROJECT_TEMP_ROOT\\s*=\\s*(.+)$", options: .anchorsMatchLines)
-
-/**
-Parse `PROJECT_TEMP_ROOT` from `xcodebuild -showBuildSettings` output
-
-- parameter xcodebuildOutput: Output of `xcodebuild -showBuildSettings` to be parsed for `PROJECT_TEMP_ROOT`.
-
-- returns: PROJECT_TEMP_ROOT
-*/
-internal func parseProjectTempRoot(xcodebuildOutput output: String) -> String? {
-    let range = NSRange(output.startIndex..<output.endIndex, in: output)
-    guard let match = regexForProjectTempRoot.firstMatch(in: output, range: range),
-        let rangeOfProjectTempRoot = Range(match.range(at: 1), in: output)
-        else {
-            return nil
-    }
-    return String(output[rangeOfProjectTempRoot])
 }
 
 /**
@@ -241,18 +297,16 @@ internal func checkNewBuildSystem(in projectTempRoot: String, moduleName: String
         let result = manifestURLs.lazy.compactMap { manifestURL -> [String]? in
             guard let contents = try? String(contentsOf: manifestURL),
                 let yaml = try? Yams.compose(yaml: contents),
-                let commands = yaml?["commands"]?.mapping?.values else {
+                let commands = (yaml as Node?)?["commands"]?.mapping?.values else {
                     return nil
             }
             for command in commands where command["description"]?.string?.hasSuffix("com.apple.xcode.tools.swift.compiler") ?? false {
                 if let args = command["args"]?.sequence,
-                    let index = args.index(of: "-module-name"),
+                    let index = args.firstIndex(of: "-module-name"),
                     moduleName != nil ? args[args.index(after: index)].string == moduleName : true {
                     let fullArgs = args.compactMap { $0.string }
-                    if let separatorIndex = fullArgs.index(of: "--") {
-                        return Array(fullArgs.suffix(from: fullArgs.index(after: separatorIndex)))
-                    }
-                    return fullArgs
+                    let swiftCIndex = fullArgs.firstIndex(of: "--").flatMap(fullArgs.index(after:)) ?? fullArgs.startIndex
+                    return Array(fullArgs.suffix(from: fullArgs.index(after: swiftCIndex)))
                 }
             }
             return nil

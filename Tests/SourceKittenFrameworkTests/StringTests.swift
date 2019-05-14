@@ -191,7 +191,7 @@ class StringTests: XCTestCase {
                 }
             }
             """
-        XCTAssertEqual(string.bridge().byteRangeToNSRange(start: 115, length: 42), NSRange(location: 115, length: 38))
+        XCTAssertEqual(string.bridge().byteRangeToNSRange(start: 115, length: 41), NSRange(location: 115, length: 38))
     }
 
     func testLineAndCharacterForCharacterOffset() {
@@ -214,6 +214,19 @@ class StringTests: XCTestCase {
         XCTAssertEqual(string.bridge().lineAndCharacter(forCharacterOffset: 35, expandingTabsToWidth: 2), (4, 3))
         XCTAssertEqual(string.bridge().lineAndCharacter(forCharacterOffset: 35, expandingTabsToWidth: 4), (4, 5))
         XCTAssertEqual(string.bridge().lineAndCharacter(forCharacterOffset: 35, expandingTabsToWidth: 8), (4, 9))
+    }
+
+    func testUnescaping() {
+        XCTAssertEqual("aaa".unescaped, "aaa")
+        XCTAssertEqual("a\\bc".unescaped, "abc")
+        XCTAssertEqual("\\abc".unescaped, "abc")
+        XCTAssertEqual("ab\\c".unescaped, "abc")
+        XCTAssertEqual("\\a".unescaped, "a")
+        XCTAssertEqual("\\\\".unescaped, "\\")
+        XCTAssertEqual("a\\\\\\b".unescaped, "a\\b")
+
+        // no crash on bad input
+        XCTAssertEqual("ab\\".unescaped, "ab")
     }
 }
 
@@ -251,7 +264,8 @@ extension StringTests {
             ("testLineRangeWithByteRange", testLineRangeWithByteRange),
             ("testLineAndCharacterForByteOffset", testLineAndCharacterForByteOffset),
             ("testByteRangeToNSRange", testByteRangeToNSRange),
-            ("testLineAndCharacterForCharacterOffset", testLineAndCharacterForCharacterOffset)
+            ("testLineAndCharacterForCharacterOffset", testLineAndCharacterForCharacterOffset),
+            ("testUnescaping", testUnescaping)
         ]
     }
 }

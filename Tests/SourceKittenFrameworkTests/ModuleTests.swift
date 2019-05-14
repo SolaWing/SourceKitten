@@ -29,6 +29,13 @@ class ModuleTests: XCTestCase {
         let commandantModule = Module(xcodeBuildArguments: arguments, name: nil, inPath: commandantPath)!
         compareJSONString(withFixtureNamed: "Commandant", jsonString: commandantModule.docs, rootDirectory: commandantPath)
     }
+
+    func testCommandantResultDocs() {
+        let commandantPath = projectRoot + "/Carthage/Checkouts/Commandant/"
+        let arguments = ["-workspace", "Commandant.xcworkspace", "-scheme", "Result-tvOS", "test"]
+        let commandantModule = Module(xcodeBuildArguments: arguments, name: nil, inPath: commandantPath)!
+        compareJSONString(withFixtureNamed: "CommandantResultTVOS", jsonString: commandantModule.docs, rootDirectory: commandantPath)
+    }
 }
 
 #if SWIFT_PACKAGE
@@ -40,14 +47,35 @@ let commandantPathForSPM: String? = {
     }
 
     let task = Process()
-    task.launchPath = "/usr/bin/env"
+    let path = "/usr/bin/env"
     task.arguments = ["swift", "package", "show-dependencies", "--format", "json"]
-    task.currentDirectoryPath = projectRoot
 
     let pipe = Pipe()
     task.standardOutput = pipe
 
-    task.launch()
+    do {
+    #if canImport(Darwin)
+        if #available(macOS 10.13, *) {
+            task.executableURL = URL(fileURLWithPath: path)
+            task.currentDirectoryURL = URL(fileURLWithPath: projectRoot)
+            try task.run()
+        } else {
+            task.launchPath = path
+            task.currentDirectoryPath = projectRoot
+            task.launch()
+        }
+    #elseif compiler(>=5)
+        task.executableURL = URL(fileURLWithPath: path)
+        task.currentDirectoryURL = URL(fileURLWithPath: projectRoot)
+        try task.run()
+    #else
+        task.launchPath = path
+        task.currentDirectoryPath = projectRoot
+        task.launch()
+    #endif
+    } catch {
+        return nil
+    }
     task.waitUntilExit()
 
     let file = pipe.fileHandleForReading

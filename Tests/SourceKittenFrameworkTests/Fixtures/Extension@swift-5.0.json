@@ -57,7 +57,7 @@
             "key.parsed_scope.end" : 5,
             "key.parsed_scope.start" : 5,
             "key.typename" : "Int.Type",
-            "key.typeusr" : "$SSimD",
+            "key.typeusr" : "$sSimD",
             "key.usr" : "s:9Extension4BaseC5Indexa"
           },
           {
@@ -90,7 +90,7 @@
 
             ],
             "key.typename" : "(Base) -> (Int) -> ()",
-            "key.typeusr" : "$S5indexySi_tcD",
+            "key.typeusr" : "$s5indexySi_tcD",
             "key.usr" : "s:9Extension4BaseC1f5indexySi_tF"
           },
           {
@@ -120,15 +120,16 @@
             "key.parsed_scope.end" : 13,
             "key.parsed_scope.start" : 12,
             "key.typename" : "Base.Nested.Type",
-            "key.typeusr" : "$S9Extension4BaseC6NestedCmD",
+            "key.typeusr" : "$s9Extension4BaseC6NestedCmD",
             "key.usr" : "s:9Extension4BaseC6NestedC"
           }
         ],
         "key.typename" : "Base.Type",
-        "key.typeusr" : "$S9Extension4BaseCmD",
+        "key.typeusr" : "$s9Extension4BaseCmD",
         "key.usr" : "s:9Extension4BaseC"
       },
       {
+        "key.accessibility" : "source.lang.swift.accessibility.internal",
         "key.annotated_decl" : "<Declaration>class Base<\/Declaration>",
         "key.bodylength" : 155,
         "key.bodyoffset" : 214,
@@ -176,7 +177,7 @@
             "key.parsed_scope.end" : 19,
             "key.parsed_scope.start" : 19,
             "key.typename" : "Double.Type",
-            "key.typeusr" : "$SSdmD",
+            "key.typeusr" : "$sSdmD",
             "key.usr" : "s:9Extension4BaseC13ExtendedIndexa"
           },
           {
@@ -209,15 +210,16 @@
 
             ],
             "key.typename" : "(Base) -> (Double) -> ()",
-            "key.typeusr" : "$S5indexySd_tcD",
+            "key.typeusr" : "$s5indexySd_tcD",
             "key.usr" : "s:9Extension4BaseC9extendedF5indexySd_tF"
           }
         ],
         "key.typename" : "Base.Type",
-        "key.typeusr" : "$S9Extension4BaseCmD",
+        "key.typeusr" : "$s9Extension4BaseCmD",
         "key.usr" : "s:9Extension4BaseC"
       },
       {
+        "key.accessibility" : "source.lang.swift.accessibility.internal",
         "key.annotated_decl" : "<Declaration>class <Type usr=\"s:9Extension4BaseC\">Base<\/Type>.Nested<\/Declaration>",
         "key.bodylength" : 1,
         "key.bodyoffset" : 436,
@@ -240,7 +242,7 @@
         "key.parsed_scope.end" : 29,
         "key.parsed_scope.start" : 28,
         "key.typename" : "Base.Nested.Type",
-        "key.typeusr" : "$S9Extension4BaseC6NestedCmD",
+        "key.typeusr" : "$s9Extension4BaseC6NestedCmD",
         "key.usr" : "s:9Extension4BaseC6NestedC"
       },
       {
@@ -278,15 +280,16 @@
             "key.parsed_scope.end" : 33,
             "key.parsed_scope.start" : 32,
             "key.typename" : "🐽.🐧.Type",
-            "key.typeusr" : "$S9Extension004ipIhC004voIhVmD",
+            "key.typeusr" : "$s9Extension004ipIhC004voIhVmD",
             "key.usr" : "s:9Extension004ipIhC004voIhV"
           }
         ],
         "key.typename" : "🐽.Type",
-        "key.typeusr" : "$S9Extension004ipIhCmD",
+        "key.typeusr" : "$s9Extension004ipIhCmD",
         "key.usr" : "s:9Extension004ipIhC"
       },
       {
+        "key.accessibility" : "source.lang.swift.accessibility.internal",
         "key.annotated_decl" : "<Declaration>struct <Type usr=\"s:9Extension004ipIhC\">🐽<\/Type>.🐧<\/Declaration>",
         "key.bodylength" : 1,
         "key.bodyoffset" : 501,
@@ -302,7 +305,7 @@
         "key.parsed_scope.end" : 37,
         "key.parsed_scope.start" : 36,
         "key.typename" : "🐽.🐧.Type",
-        "key.typeusr" : "$S9Extension004ipIhC004voIhVmD",
+        "key.typeusr" : "$s9Extension004ipIhC004voIhVmD",
         "key.usr" : "s:9Extension004ipIhC004voIhV"
       }
     ]

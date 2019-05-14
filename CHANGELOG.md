@@ -12,6 +12,78 @@
 
 * None.
 
+## 0.23.2
+
+##### Breaking
+
+* None.
+
+##### Enhancements
+
+* Add parsed extension declarations to Swift docs.  
+  [John Fairhurst](https://github.com/johnfairh)
+
+* Make `File` conform to `Equatable` and `Hashable`.  
+  [Elliott Williams](https://github.com/elliottwilliams)
+
+##### Bug Fixes
+
+* None.
+
+## 0.23.1
+
+##### Breaking
+
+* None.
+
+##### Enhancements
+
+* None.
+
+##### Bug Fixes
+
+* Fix warnings or errors when compiling in Swift 5 language mode.  
+  [Yi Wang](https://github.com/neakor)
+  [JP Simard](https://github.com/jpsim)
+
+## 0.23.0
+
+##### Breaking
+
+* None.
+
+##### Enhancements
+
+* Introduce `XcodeBuildSetting` for interacting with project build settings.  
+  [Chris Zielinski](https://github.com/chriszielinski)
+
+* Improve module name inference for `Module`.  
+  [Chris Zielinski](https://github.com/chriszielinski)
+
+* Add Swift 5 support. Add new `SwiftDeclarationAttributeKind` and
+  `SwiftDeclarationKind` members and make those enums conform to
+  `CaseIterable`.  
+  [Norio Nomura](https://github.com/norio-nomura)
+
+##### Bug Fixes
+
+* “.swift”-suffixed directory in xcodebuild arguments no longer detected as
+  Swift file.  
+  [Minh Nguyễn](https://github.com/1ec5)
+  [#574](https://github.com/jpsim/SourceKitten/issues/574)
+
+* Fix `xcodebuild clean` path for new build system and Xcode 10.2.  
+  [John Fairhurst](https://github.com/johnfairh)
+  [realm/jazzy#1057](https://github.com/realm/jazzy/issues/1057)
+
+* Pathnames containing shell-escaped characters in xcodebuild arguments no
+  longer prevent documentation generation.  
+  [John Fairhurst](https://github.com/johnfairh)
+
+* `swiftc` no longer passed as a compiler argument when using `doc` and
+  the new build system.  
+  [John Fairhurst](https://github.com/johnfairh)
+
 ## 0.22.0
 
 ##### Breaking
