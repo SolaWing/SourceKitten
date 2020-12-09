@@ -42,7 +42,12 @@ public func toNSDictionary(_ dictionary: [String: SourceKitRepresentable]) -> NS
     for (key, object) in dictionary {
         switch object {
         case let object as [SourceKitRepresentable]:
-            anyDictionary[key] = object.map { toNSDictionary($0 as! [String: SourceKitRepresentable]) }
+            anyDictionary[key] = object.map { (v) -> Any in
+                switch v {
+                case let v as [String: SourceKitRepresentable]: return toNSDictionary(v)
+                default: return v
+                }
+            }
         case let object as [[String: SourceKitRepresentable]]:
             anyDictionary[key] = object.map { toNSDictionary($0) }
         case let object as [String: SourceKitRepresentable]:

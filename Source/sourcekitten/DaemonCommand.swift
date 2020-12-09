@@ -8,7 +8,6 @@
 
 import ArgumentParser
 import Foundation
-import Result
 import SourceKittenFramework
 
 private let stdin = StreamReader(FileHandle.standardInput)
@@ -16,15 +15,13 @@ private let stdout = FileHandle.standardOutput
 private var stderr = FileHandle.standardError
 
 func log(_ content: String) {
-//    print(error, to: &stderr)
+   // print(error, to: &stderr)
 }
 
-/*
-struct DaemonCommand: ParsableCommand {
-    let verb = "daemon"
-    let function = "run swiftkittend with input pipe"
+struct Daemon: ParsableCommand {
+    static let configuration = CommandConfiguration(abstract: "run swiftkittend with input pipe")
 
-    func run(_ options: NoOptions<SourceKittenError>) -> Result<(), SourceKittenError> {
+    mutating func run() throws {
         var package: RequestPackage? {
             return autoreleasepool {
                 do {
@@ -37,7 +34,7 @@ struct DaemonCommand: ParsableCommand {
             }
         }
         var finished = false
-        loop: while !finished, let p = package {
+        loop: while !finished, let p = package { // swiftlint:disable:this all
             autoreleasepool {
                 switch p.content["method"] as? String {
                 case "yaml":
@@ -45,7 +42,7 @@ struct DaemonCommand: ParsableCommand {
                     if let content = p.content["params"] as? String, let rid = p.content["id"] {
                         let request = Request.yamlRequest(yaml: content)
                         do {
-                            response(id: rid, result: toNSDictionary(try request.send()), error: nil)
+                            response(id: rid, result: try request.send(), error: nil)
                         } catch {
                             response(id: rid, result: nil, error: error.localizedDescription)
                         }
@@ -61,7 +58,6 @@ struct DaemonCommand: ParsableCommand {
             }
         }
         print("end", to: &stderr)
-        return .success(())
     }
 
     func getPackage() throws -> RequestPackage {
@@ -135,12 +131,12 @@ class StreamReader {
         self.handler = handler
     }
 
-    public func readLine(strippingNewline: Bool = true) -> String? {
+    func readLine(strippingNewline: Bool = true) -> String? {
 
         var used = Data()
         var newData = buffer
         repeat {
-            if let index = newData.index(of: 10) {
+            if let index = newData.firstIndex(of: 10) {
                 used.append(newData[...index])
 
                 buffer = newData[(index + 1)...]
@@ -166,7 +162,7 @@ class StreamReader {
         }
     }
 
-    public func readData(ofLength len: Int) -> Data {
+    func readData(ofLength len: Int) -> Data {
         let c = buffer.count
         if len <= c {
             let d = buffer[ ..<(buffer.startIndex.advanced(by: len)) ]
@@ -180,4 +176,3 @@ class StreamReader {
         }
     }
 }
-*/

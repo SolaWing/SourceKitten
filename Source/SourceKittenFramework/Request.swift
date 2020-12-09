@@ -17,6 +17,10 @@ extension Int64: SourceKitRepresentable {}
 extension Bool: SourceKitRepresentable {}
 extension Data: SourceKitRepresentable {}
 
+func log(_ content: String) {
+    // FileHandle.standardError.write("\(content)\n".data(using: String.Encoding.utf8)!)
+}
+
 extension SourceKitRepresentable {
     public func isEqualTo(_ rhs: SourceKitRepresentable) -> Bool {
         switch self {
@@ -338,16 +342,29 @@ public enum Request {
     */
     public func send() throws -> [String: SourceKitRepresentable] {
         initializeSourceKitFailable
-        let response = sourcekitObject.sendSync()
-        defer { sourcekitd_response_dispose(response!) }
-        if sourcekitd_response_is_error(response!) {
-            let error = Request.Error(response: response!)
+        guard let response = sourcekitObject.sendSync() else {
+            throw Request.Error.unknown("empty response")
+        }
+        defer { sourcekitd_response_dispose(response) }
+        log("get request response")
+
+        if sourcekitd_response_is_error(response) {
+            let error = Request.Error(response: response)
             if case .connectionInterrupted = error {
                 _ = sourceKitWaitingRestoredSemaphore.wait(timeout: DispatchTime.now() + 10)
             }
             throw error
         }
-        return fromSourceKit(sourcekitd_response_get_value(response!)) as! [String: SourceKitRepresentable]
+        log("get request no error")
+        guard let variant = fromSourceKit(sourcekitd_response_get_value(response)) else {
+            throw Request.Error.unknown("can't format response")
+        }
+        log("get request extract success")
+        guard let v = variant as? [String: SourceKitRepresentable] else {
+            throw Request.Error.unknown("response not dictionary: \(variant)")
+        }
+        log("get request convert")
+        return v
     }
 
     /// A enum representation of SOURCEKITD_ERROR_*
