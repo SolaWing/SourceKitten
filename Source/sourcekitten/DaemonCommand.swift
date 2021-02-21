@@ -10,9 +10,9 @@ import ArgumentParser
 import Foundation
 import SourceKittenFramework
 
-private let stdin = StreamReader(FileHandle.standardInput)
-private let stdout = FileHandle.standardOutput
-private var stderr = FileHandle.standardError
+let stdin = StreamReader(FileHandle.standardInput)
+let stdout = FileHandle.standardOutput
+var stderr = FileHandle.standardError
 
 func log(_ content: String) {
    // print(error, to: &stderr)

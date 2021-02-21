@@ -15,6 +15,7 @@ struct SourceKitten: ParsableCommand {
             Structure.self,
             Syntax.self,
             Daemon.self,
+            Console.self,
             Version.self
         ]
     )
