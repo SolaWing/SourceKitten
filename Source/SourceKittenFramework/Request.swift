@@ -53,6 +53,12 @@ extension SourceKitRepresentable {
     }
 }
 
+private func dict(from response: sourcekitd_response_t) -> [String: SourceKitRepresentable]? {
+    let value = sourcekitd_response_get_value(response)
+    guard sourcekitd_variant_get_type(value) == SOURCEKITD_VARIANT_TYPE_DICTIONARY else { return nil }
+
+    return (fromSourceKit(value) as! [String: SourceKitRepresentable])
+}
 // swiftlint:disable:next cyclomatic_complexity
 private func fromSourceKit(_ sourcekitObject: sourcekitd_variant_t) -> SourceKitRepresentable? {
     switch sourcekitd_variant_get_type(sourcekitObject) {
@@ -99,6 +105,10 @@ private func fromSourceKit(_ sourcekitObject: sourcekitd_variant_t) -> SourceKit
     }
 }
 
+extension NSNotification.Name {
+    public static let sourcekit: Self = .init("sourcekit")
+}
+public var sourcekitNotificationEnabled = false
 /// Lazily and singly computed Void constants to initialize SourceKit once per session.
 private let initializeSourceKit: Void = {
     sourcekitd_initialize()
@@ -106,12 +116,21 @@ private let initializeSourceKit: Void = {
 private let initializeSourceKitFailable: Void = {
     initializeSourceKit
     sourcekitd_set_notification_handler { response in
-        if !sourcekitd_response_is_error(response!) {
+        guard let response = response else { return }
+        if !sourcekitd_response_is_error(response) {
+            // sourcekitd_response_description_dump(response)
             fflush(stdout)
             fputs("sourcekitten: connection to SourceKitService restored!\n", stderr)
+            if sourcekitNotificationEnabled {
+                autoreleasepool {
+                    if let notification = dict(from: response) {
+                        NotificationCenter.default.post(name: .sourcekit, object: notification)
+                    }
+                }
+            }
             sourceKitWaitingRestoredSemaphore.signal()
         }
-        sourcekitd_response_dispose(response!)
+        sourcekitd_response_dispose(response)
     }
 }()
 
