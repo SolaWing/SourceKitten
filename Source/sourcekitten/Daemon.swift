@@ -23,6 +23,9 @@ func log(_ content: String) {
 struct Daemon: ParsableCommand {
     static let configuration = CommandConfiguration(abstract: "run swiftkittend with input pipe")
 
+    @Flag(help: "Enable notification")
+    var enableNotification: Bool = false
+
     func run() throws {
         var package: RequestPackage? {
             return autoreleasepool {
@@ -36,29 +39,25 @@ struct Daemon: ParsableCommand {
             }
         }
         var finished = false
-        // 先不开启通知，端上用不上..
-        // sourcekitNotificationEnabled = true
-        // let notificationSubscribe = NotificationCenter.default.addObserver(forName: .sourcekit, object: nil, queue: nil) { notification in
-        //     self.response(id: nil, result: notification.object, error: nil)
-        // }
-        // defer { NotificationCenter.default.removeObserver(notificationSubscribe) }
+
+        var notificationSubscribe: Any?
+        defer {
+            if let notificationSubscribe = notificationSubscribe {
+                NotificationCenter.default.removeObserver(notificationSubscribe)
+            }
+        }
+        if enableNotification {
+            sourcekitNotificationEnabled = true
+            notificationSubscribe = NotificationCenter.default.addObserver(forName: .sourcekit, object: nil, queue: nil) { notification in
+                self.response(id: nil, result: notification.object, error: nil)
+            }
+        }
         loop: while !finished, let p = package { // swiftlint:disable:this all
             autoreleasepool {
                 switch p.content["method"] as? String {
                 case "yaml":
                     print("yaml request", to: &stderr)
-                    if let content = p.content["params"] as? String {
-                        let rid = p.content["id"] // 有id的是请求，没id的是不要回应的通知
-                        let request = Request.yamlRequest(yaml: content)
-                        do {
-                            let v = try request.send()
-                            if let rid = rid { response(id: rid, result: v, error: nil) }
-                        } catch {
-                            if let rid = rid { response(id: rid, result: nil, error: error.localizedDescription) }
-                        }
-                    } else {
-                        response(id: p.content["id"], result: nil, error: "Invalid yaml request")
-                    }
+                    self.handleYamlRequest(package: p)
                 case "end":
                     print("will end", to: &stderr)
                     finished = true
@@ -68,6 +67,21 @@ struct Daemon: ParsableCommand {
             }
         }
         print("end", to: &stderr)
+    }
+
+    func handleYamlRequest(package p: RequestPackage) {
+        if let content = p.content["params"] as? String {
+            let rid = p.content["id"] // 有id的是请求，没id的是不要回应的通知
+            let request = Request.yamlRequest(yaml: content)
+            do {
+                let v = try request.send()
+                if let rid = rid { response(id: rid, result: v, error: nil) }
+            } catch {
+                if let rid = rid { response(id: rid, result: nil, error: error.localizedDescription) }
+            }
+        } else {
+            response(id: p.content["id"], result: nil, error: "Invalid yaml request")
+        }
     }
 
     func getPackage() throws -> RequestPackage {
