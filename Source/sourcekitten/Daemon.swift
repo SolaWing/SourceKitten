@@ -25,8 +25,12 @@ struct Daemon: ParsableCommand {
 
     @Flag(help: "Enable notification")
     var enableNotification: Bool = false
+    @Flag var verbose: Bool = false
 
     func run() throws {
+        if verbose {
+            enableLog = true
+        }
         var package: RequestPackage? {
             return autoreleasepool {
                 do {

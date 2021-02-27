@@ -17,6 +17,7 @@ extension Int64: SourceKitRepresentable {}
 extension Bool: SourceKitRepresentable {}
 extension Data: SourceKitRepresentable {}
 
+public var enableLog = false
 func log(_ content: String) {
     // FileHandle.standardError.write("\(content)\n".data(using: String.Encoding.utf8)!)
 }
@@ -118,9 +119,11 @@ private let initializeSourceKitFailable: Void = {
     sourcekitd_set_notification_handler { response in
         guard let response = response else { return }
         if !sourcekitd_response_is_error(response) {
-            // sourcekitd_response_description_dump(response)
             fflush(stdout)
             fputs("sourcekitten: connection to SourceKitService restored!\n", stderr)
+            if enableLog {
+                sourcekitd_response_description_dump(response)
+            }
             if sourcekitNotificationEnabled {
                 autoreleasepool {
                     if let notification = dict(from: response) {
